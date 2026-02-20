@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HS Panel</title>
+
+<style>
+body{
+  margin:0;
+  font-family:Arial, sans-serif;
+  background:#0A0F1C;
+  color:#FFF;
+}
+
+.neon{
+  color:#00D9FF;
+  text-shadow:0 0 5px #00D9FF,0 0 10px #00D9FF,0 0 20px #00D9FF;
+}
+
+.container{ padding:10px; }
+
+.card{
+  background:#1A2332;
+  padding:12px;
+  border-radius:10px;
+  margin-bottom:15px;
+  box-shadow:0 0 10px #00D9FF33;
+}
+
+input{
+  width:100%;
+  padding:8px;
+  border-radius:6px;
+  border:none;
+  margin:8px 0;
+  background:#111827;
+  color:#FFF;
+}
+
+button{
+  padding:8px;
+  border:none;
+  border-radius:6px;
+  cursor:pointer;
+  font-weight:bold;
+}
+
+.primary{ background:#00D9FF; color:#000; }
+.accent{ background:#FF6B00; color:#FFF; }
+.darkBtn{ background:#2A3441; color:#B0BEC5; }
+
+.row{ display:flex; gap:6px; }
+
+#loginScreen{
+  position:fixed;
+  width:100%;
+  height:100%;
+  background:#0A0F1C;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+}
+
+.loginBox{
+  background:#1A2332;
+  padding:30px;
+  border-radius:12px;
+  width:300px;
+  text-align:center;
+  box-shadow:0 0 20px #00D9FF;
+}
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <div class="loginBox">
+    <h2 class="neon">HS PANEL</h2>
+    <input type="text" id="user" placeholder="Usuário">
+    <input type="password" id="pass" placeholder="Senha">
+    <button class="primary" onclick="login()">Entrar</button>
+    <p id="error" style="color:red;"></p>
+  </div>
+</div>
+
+<!-- PAINEL -->
+<div id="panel" style="display:none;">
+<div class="container">
+
+<div class="card">
+  <b>Código HS Automático:</b>
+  <p id="generatedCode" style="color:#FF6B00;font-size:18px;"></p>
+  <p id="lastUpdate" style="color:#B0BEC5;"></p>
+</div>
+
+<div class="card">
+  <b>Cole seu código HS:</b>
+  <input type="text" id="selectedCode">
+  <div class="row">
+    <button class="primary" onclick="chooseCode()">ESCOLHER</button>
+    <button class="accent" onclick="activateCode()">ATIVAR</button>
+  </div>
+  <p id="activeCodeText"></p>
+</div>
+
+<div class="card">
+  <b>Modos de Precisão:</b>
+  <div class="row" style="margin-top:8px;">
+    <button onclick="changePrecision('Rápido')" id="Rápido">Rápido</button>
+    <button onclick="changePrecision('Médio')" id="Médio">Médio</button>
+    <button onclick="changePrecision('Baixo')" id="Baixo">Baixo</button>
+  </div>
+  <p style="margin-top:8px;">Modo Atual: <span id="precisionMode"></span></p>
+</div>
+
+<div class="card">
+  <b>Funções:</b>
+  <div id="functionsList" style="margin-top:8px;"></div>
+</div>
+
+</div>
+</div>
+
+<script>
+let lastUpdate = new Date();
+let generatedCode = "";
+let selectedCode = "";
+let activeCode = "";
+
+let precisionMode = localStorage.getItem("precisionMode") || "Rápido";
+
+let functionsList = JSON.parse(localStorage.getItem("functionsList")) || [
+{ name:"Precision Full", active:false },
+{ name:"Mira Chiclete", active:false },
+{ name:"Headtrick HS", active:false },
+{ name:"Sensibilidade Perfeita", active:false },
+{ name:"Intensidade Extra", active:false },
+{ name:"Velocidade do HUD", active:false },
+{ name:"Precisão Absoluta", active:false },
+{ name:"Precisão a Qualquer Distância", active:false }
+];
+
+function saveData(){
+  localStorage.setItem("precisionMode", precisionMode);
+  localStorage.setItem("functionsList", JSON.stringify(functionsList));
+}
+
+function generateCode(){
+  generatedCode = "HS_" + Math.random().toString(36).substring(2,8).toUpperCase();
+  document.getElementById("generatedCode").innerText = generatedCode;
+  document.getElementById("lastUpdate").innerText =
+    "Última atualização: " + lastUpdate.toLocaleString();
+}
+generateCode();
+
+function chooseCode(){
+  selectedCode = document.getElementById("selectedCode").value;
+  if(!selectedCode) return alert("Nenhum código selecionado!");
+  alert("Código selecionado!");
+}
+
+function activateCode(){
+  if(!selectedCode) return alert("Nenhum código selecionado!");
+  activeCode = selectedCode;
+  document.getElementById("activeCodeText").innerText =
+    "Código Ativo: " + activeCode;
+}
+
+function changePrecision(mode){
+  precisionMode = mode;
+  document.getElementById("precisionMode").innerText = mode;
+  updatePrecisionButtons();
+  saveData();
+}
+
+function updatePrecisionButtons(){
+  ["Rápido","Médio","Baixo"].forEach(m=>{
+    let btn = document.getElementById(m);
+    btn.className = (precisionMode===m) ? "primary" : "darkBtn";
+  });
+}
+updatePrecisionButtons();
+document.getElementById("precisionMode").innerText = precisionMode;
+
+function toggleFunction(index){
+  functionsList[index].active = !functionsList[index].active;
+  saveData();
+  renderFunctions();
+}
+
+function renderFunctions(){
+  let html = "";
+  functionsList.forEach((f,i)=>{
+    html += `
+    <div style="display:flex;justify-content:space-between;margin-bottom:6px;">
+      <span style="color:${f.active?'#FF6B00':'#B0BEC5'}">
+        ${f.active?'●':'○'} ${f.name}
+      </span>
+      <button class="${f.active?'accent':'darkBtn'}"
+        onclick="toggleFunction(${i})">
+        ${f.active?'Desativar':'Ativar'}
+      </button>
+    </div>`;
+  });
+  document.getElementById("functionsList").innerHTML = html;
+}
+renderFunctions();
+
+function login(){
+  let user = document.getElementById("user").value;
+  let pass = document.getElementById("pass").value;
+
+  if(user==="jp" && pass==="xiter"){
+    document.getElementById("loginScreen").style.display="none";
+    document.getElementById("panel").style.display="block";
+  }else{
+    document.getElementById("error").innerText="Usuário ou senha incorretos!";
+  }
+}
+</script>
+
+</body>
+</html>
